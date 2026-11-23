@@ -17,11 +17,11 @@ MODELES = Path(__file__).resolve().parent.parent / "models" / "wholesale_custome
 def charger():
     """Charge une seule fois les fichiers joblib."""
     return {
-        "centroides": joblib.load(MODELES / "centroides.joblib"),
-        "kmeans": joblib.load(MODELES / "kmeans_model.joblib"),
-        "pca": joblib.load(MODELES / "pca_model.joblib"),
-        "points": joblib.load(MODELES / "points_pca.joblib"),
-        "config": joblib.load(MODELES / "config.joblib"),
+        "centroides": joblib.load(MODELES / "wholesale_centroides.joblib"),
+        "kmeans": joblib.load(MODELES / "wholesale_kmeans_model.joblib"),
+        "pca": joblib.load(MODELES / "wholesale_pca_model.joblib"),
+        "points": joblib.load(MODELES / "wholesale_points_pca.joblib"),
+        "config": joblib.load(MODELES / "wholesale_config.joblib"),
     }
 
 
@@ -34,6 +34,14 @@ def predire(valeurs, m):
 
 m = charger()
 cfg = m["config"]
+
+# Sécurité : les fichiers du dossier models doivent être ceux de CE projet
+ATTENDU = ['Fresh', 'Milk', 'Grocery', 'Frozen', 'Detergents_Paper', 'Delicassen']
+if list(cfg["colonnes"]) != ATTENDU:
+    st.error("Les fichiers du dossier models/wholesale_customers ne correspondent pas à ce projet. "
+             "Colonnes trouvées : " + ", ".join(map(str, cfg["colonnes"])) + ". "
+             "Remplacez-les par ceux du notebook Wholesale Customers.")
+    st.stop()
 
 st.title("🛒 Wholesale Customers")
 st.write("Saisissez les dépenses annuelles d'un client du grossiste pour connaître son groupe. Modèle déployé : **" + cfg["modele_final"] + "**.")
@@ -69,7 +77,7 @@ with st.expander("Profil moyen de chaque classe"):
 
 with st.expander("Qualité des modèles (indice de silhouette)"):
     st.write(pd.DataFrame(cfg["silhouette"], index=["Silhouette"]).T)
-    st.write(f"Linkage de la CAH : {cfg['cah_linkage']} | nombre de classes : {cfg['n_classes']}")
+    st.write(f"Linkage de la CAH : {cfg.get('cah_linkage', '?')} | nombre de classes : {cfg.get('n_classes', '?')}")
     st.write(f"Variance expliquée par les 2 composantes de l'ACP : {cfg['variance_acp']} %")
     if "ari" in cfg:
         st.write(f"Accord avec les vraies classes du jeu de données (indice de Rand ajusté) : {cfg['ari']}")
